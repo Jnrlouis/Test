@@ -8,12 +8,17 @@ import { providers } from 'ethers'
 export default function Home() {
 
   const [walletConnected, setWalletConnected] = useState(false);
+  const [isProv, setIsProv] = useState(false);
   const web3ModalRef = useRef();
 
   let provider;
   
   const getProviderOrSigner = async (needSigner = false) => {
-    const provider = await web3ModalRef.current.connect();
+    console.log("getProviderOrSigner Called...")
+    if (!isProv) {
+      provider = await web3ModalRef.current.connect();
+      setIsProv(true);
+    };
     const web3Provider = new providers.Web3Provider(provider);
 
     const { chainId } = await web3Provider.getNetwork();
@@ -35,9 +40,9 @@ export default function Home() {
       package: WalletConnectProvider,
       options: {
         rpc: {
-          97: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+          1: 'https://mainnet.infura.io/v3/',
         },
-        chainId: 97,
+        chainId: 1,
       },
     },
   };
@@ -45,21 +50,39 @@ export default function Home() {
   const connectWallet = async () => {
     try {
       web3ModalRef.current = new Web3Modal({
-        network: "mainnet",
         providerOptions,
-        cacheProvider: true,
+        cacheProvider: false,
         disableInjectedProvider: false,
       })
-      providerOptions;
       await getProviderOrSigner();
       setWalletConnected(true);
+      console.log("Wallet Connected");
     } catch (err) {
       console.error(err);
     }
   };
 
-  useEffect(() => {
-    provider = await web3ModalRef.current.connect();
+  const onDisconnect = async () => {
+    try {
+      setIsProv(false);
+      await web3ModalRef.current.clearCachedProvider();
+      provider = await web3ModalRef.current.clearCachedProvider();
+      setWalletConnected(false);
+      console.log("Disconnected");
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect( async () => {
+    if (ethereum) {
+      if (isProv) {
+        provider = await web3ModalRef.current.connect();
+      }
+      
+    }
+    
   });
 
   return (
@@ -85,6 +108,10 @@ export default function Home() {
           <h1>THIS IS HOW TO CONNECT WALLET</h1>
           <p>CLICK THE BUTTON BELOW</p>
           <button onClick={connectWallet} className={styles.connectBtn}>CONNECT WALLET</button>
+          <br/>
+          <h1>THIS IS HOW TO DISCONNECT WALLET</h1>
+          <p>CLICK THE BUTTON BELOW</p>
+          <button onClick={onDisconnect} className={styles.connectBtn}>DISCONNECT WALLET</button>
         </div>
       </div>
     </div>
